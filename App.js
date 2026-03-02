@@ -1,34 +1,60 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TextInput, 
+  StyleSheet, 
+  TouchableOpacity, 
+  Alert 
+} from 'react-native';
 
 export default function App() {
   const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
 
-  const validatePhone = (value) => {
-    setPhone(value);
-    const trimmed = value.trim();
+  // Format số điện thoại
+  const formatPhone = (value) => {
+    const cleaned = value.replace(/\D/g, '').slice(0, 10);
 
-    if (trimmed === '') {
-      setError('Số điện thoại không được để trống');
-      return;
-    }
+    if (cleaned.length <= 3) return cleaned;
+    if (cleaned.length <= 6)
+      return `${cleaned.slice(0, 3)} ${cleaned.slice(3)}`;
+    if (cleaned.length <= 8)
+      return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6)}`;
 
-    const phoneRegex = /^0\d{9}$/;
-    if (!phoneRegex.test(trimmed)) {
-      setError('Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 0');
-    } else {
-      setError('');
-    }
+    return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6, 8)} ${cleaned.slice(8)}`;
   };
 
+  // Hàm kiểm tra định dạng
+  const isValidPhone = (rawPhone) => {
+    const regex = /^0\d{9}$/;
+    return regex.test(rawPhone);
+  };
+
+  // Khi nhập → chỉ format, không validate
+  const handleChangeText = (value) => {
+    const formatted = formatPhone(value);
+    setPhone(formatted);
+  };
+
+  // Khi bấm nút
   const handleConfirm = () => {
-    if (error || phone.trim() === '') {
-      Alert.alert('Lỗi', 'Vui lòng nhập số điện thoại hợp lệ');
+    const raw = phone.replace(/\s/g, '');
+
+    if (raw === '') {
+      Alert.alert('Lỗi', 'Vui lòng nhập số điện thoại');
       return;
     }
 
-    Alert.alert('Thành công', 'Xác nhận số điện thoại thành công');
+    if (!isValidPhone(raw)) {
+      setError('Số điện thoại không đúng định dạng. Vui lòng nhập lại');
+      Alert.alert('', 'Số điện thoại không đúng định dạng. Vui lòng nhập lại');
+      return;
+    }
+
+    // Nếu đúng
+    setError('');
+    Alert.alert('Thành công', 'Số điện thoại hợp lệ');
   };
 
   return (
@@ -40,7 +66,6 @@ export default function App() {
         Dùng số điện thoại để đăng nhập hoặc đăng ký tài khoản tại OneHousing Pro
       </Text>
 
-      {/* Chú thích yêu cầu */}
       <Text style={styles.note}>
         * Số điện thoại gồm 10 chữ số, bắt đầu bằng 0
       </Text>
@@ -53,19 +78,14 @@ export default function App() {
           error ? styles.inputError : null
         ]}
         value={phone}
-        onChangeText={validatePhone}
+        onChangeText={handleChangeText}
       />
 
       {error !== '' && <Text style={styles.error}>{error}</Text>}
 
-      {/* Nút xác nhận */}
       <TouchableOpacity
-        style={[
-          styles.button,
-          (error || phone === '') && styles.buttonDisabled
-        ]}
+        style={styles.button}
         onPress={handleConfirm}
-        disabled={error !== '' || phone === ''}
       >
         <Text style={styles.buttonText}>Xác nhận</Text>
       </TouchableOpacity>
@@ -117,12 +137,9 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignItems: 'center',
   },
-  buttonDisabled: {
-    backgroundColor: '#A0A0A0',
-  },
   buttonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '500',
   },
-})
+});
